@@ -8,18 +8,19 @@ void setup() {
     Serial.println("CoreBoard Setup");
 
     //Attach Servos to Pins
-    leftDriveServo.attach(SERVO_6, 500, 2500);
-    leftPanServo.attach(SERVO_5, 500, 2500);
-    leftTiltServo.attach(SERVO_4, 500, 2500);
 
-    rightDriveServo.attach(SERVO_3, 500, 2500);
-    rightPanServo.attach(SERVO_2, 500, 2500);
-    rightTiltServo.attach(SERVO_1, 500, 2500);
+    leftPanServo.attach(LeftPan, 500, 2500);
+    leftTiltServo.attach(LeftTilt, 500, 2500);
 
-    backDriveServo.attach(SERVO_7, 500, 2500);
+
+    rightPanServo.attach(RightPan, 500, 2500);
+    rightTiltServo.attach(RightTilt, 500, 2500);
+
+    backPanServo.attach(BackPan, 500, 2500);
+    backTiltServo.attach(BackTilt, 500, 2500);
     
-    servo1.attach(SERVO_9, 500, 2500);
-    servo2.attach(SERVO_8, 500, 2500);
+    spare1.attach(Spare1, 500, 2500);
+    spare2.attach(Spare2, 500, 2500);
 
 #if USE_RPM_CONTROL
     RoveVESC *motors[6] = { &FL_Motor, &ML_Motor, &BL_Motor, &FR_Motor, &MR_Motor, &BR_Motor };
@@ -42,20 +43,24 @@ void setup() {
     //Initialize Drive Mode
     driveMode(true);
 
-    //Initialize Buttons
-    pinMode(REVERSE, INPUT);
-    pinMode(B_ENC_0, INPUT);
-    pinMode(B_ENC_1, INPUT);
-    pinMode(B_ENC_2, INPUT);
-    pinMode(B_ENC_3, INPUT);
+    //Initialize Buttons 
+    pinMode(Back, INPUT);
+    pinMode(Forward, INPUT);
+    pinMode(Right, INPUT);
+    pinMode(Left, INPUT);
 
     //Initialize Switches
-    pinMode(FL_SWITCH, INPUT);
-    pinMode(ML_SWITCH, INPUT);
-    pinMode(BL_SWITCH, INPUT);
-    pinMode(FR_SWITCH, INPUT);
-    pinMode(MR_SWITCH, INPUT);
-    pinMode(BR_SWITCH, INPUT);
+    pinMode(FL_EN, INPUT);
+    pinMode(ML_EN, INPUT);
+    pinMode(BL_EN, INPUT);
+    pinMode(FR_EN, INPUT);
+    pinMode(MR_EN, INPUT);
+    pinMode(BR_EN, INPUT);
+
+    //Initialize Rotary
+    pinMode(RTRY1, INPUT);
+    pinMode(RTRY2, INPUT);
+    pinMode(RTRY4, INPUT);
 
     //Initialize NeoPixel
     neoPixel.begin();
@@ -141,31 +146,6 @@ void loop() {
     //Gimbal Packets
     switch (packet.dataId) {
 
-        // Increment left drive gimbal by [-180, 180]
-        case RC_COREBOARD_LEFTDRIVEGIMBALINCREMENT_DATA_ID:
-        {
-            int16_t* data = (int16_t*) packet.data;
-            leftDriveServo.target += data[0];
-            break;
-
-        }
-
-        // Increment right drive gimbal by [-180, 180]
-        case RC_COREBOARD_RIGHTDRIVEGIMBALINCREMENT_DATA_ID:
-        {
-            int16_t* data = (int16_t*) packet.data;
-            rightDriveServo.target += data[0];
-            break;
-        }
-
-        // Increment back drive gimbal by [-180, 180]
-        case RC_COREBOARD_BACKDRIVEGIMBALINCREMENT_DATA_ID:
-        {
-            int16_t* data = (int16_t*) packet.data;
-            backDriveServo.target += data[0];
-            break;
-        }
-
         // Increment left pan and tilt gimbals by [-180, 180]
         case RC_COREBOARD_LEFTMAINGIMBALINCREMENT_DATA_ID:
         {
@@ -183,6 +163,15 @@ void loop() {
             rightPanServo.target += data[0];
             rightTiltServo.target += data[1];
             break;
+        }
+        // Increment back pan and tilt gimbals by [-180, 180]
+        case RC_COREBOARD_BACKMAINGIMBALINCREMENT_DATA_ID:
+        {
+            int16_t* data = (int16_t*) packet.data;
+
+            backPanServo.target += data[0];
+            backTiltServo.target += data[1];
+
         }
 
     }
@@ -253,15 +242,15 @@ void loop() {
         BR_Motor.drive((int16_t)(motorTargets[5] * 1000));
 #endif
 
-        leftDriveServo.write();
+        
         leftPanServo.write();
         leftTiltServo.write();
-        rightDriveServo.write();
         rightPanServo.write();
         rightTiltServo.write();
-        backDriveServo.write();
-        servo1.write();
-        servo2.write();
+        backPanServo.write();
+        backTiltServo.write();
+        spare1.write();
+        spare2.write();
 
         lastDriveUpdate = now;
     }
@@ -276,17 +265,25 @@ void loop() {
         lastLightingPanelUpdate = now;
     }
 }
-
+//Manual buttons rework in progress, need to know which of either forward or back is pressed
+//Rotary encoder replacing old outputs in schematic(B_ENC_X)
 void manualButtons() {
-    bool reverse = !digitalRead(REVERSE); // switch is backwards
-    uint8_t manualButtons = (digitalRead(B_ENC_3)<<3) | (digitalRead(B_ENC_2)<<2) | (digitalRead(B_ENC_1)<<1) | (digitalRead(B_ENC_0)<<0);
+    bool forward = digitalRead(Forward); //Forward is pressed
+    bool backwards = digitalRead(Back);  //Back is pressed
+    uint8_t rotaryState = (digitalRead(RTRY4)<<2) | (digitalRead(RTRY2)<<1) | (digitalRead(RTRY1)<<0);
 
     // Servos
-    switch(manualButtons)
+    switch(rotaryState)
     {
-        case DS_EN_BUTTON:  //Motors
+        case 6:  //Wheels(110)
 
-            if (digitalRead(FL_SWITCH)) motorTargets[0] = (reverse? -0.5 : 0.5);
+            if (digitalRead(FL_EN))
+            {
+                if(forward)
+                motorTargets[0] = 0.5;
+                if(backwards)
+                motorTargets[0] = -0.5;
+            } 
             else motorTargets[0] = 0;
     
             if (digitalRead(ML_SWITCH)) motorTargets[1] = (reverse? -0.5 : 0.5);
@@ -305,42 +302,25 @@ void manualButtons() {
             else motorTargets[5] = 0;
             break;
 
-        case LD_BUTTON:     //S1
-            leftDriveServo.target += (reverse? -1 : 1);
-            break;
-
-        case LP_BUTTON:     //S2
+        case 1:             //LeftCam(001)
             leftPanServo.target += (reverse? -1 : 1);
             break;
 
-        case LT_BUTTON:     //S3
-            leftTiltServo.target += (reverse? -1 : 1);
-            break;
-
-        case RD_BUTTON:     //S4
-            rightDriveServo.target += (reverse? -1 : 1);
-            break;
-
-        case RP_BUTTON:     //S5
+        case 5:             //RightCam(101)
             rightPanServo.target += (reverse? -1 : 1);
             break;
 
-        case RT_BUTTON:     //S6
-            rightTiltServo.target += (reverse? -1 : 1);
-            break;
-
-        case BD_BUTTON:     //S7
+        case 3:             //BackCam(011)
             backDriveServo.target += (reverse? -1 : 1);
             break;
 
-        case S1_BUTTON:     //S8
-            servo1.target += (reverse? -1 : 1);
-            break;
-
-        case S2_BUTTON:     //S9
+        case 2:             //Spare1(010)
             servo2.target += (reverse? -1 : 1);
             break;
+        case 4:             //Spare2(100)
+            break;
     }
+    //Cases above need to be finished
 }
 
 void telemetry() {

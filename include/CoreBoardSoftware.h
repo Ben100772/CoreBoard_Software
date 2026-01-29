@@ -20,21 +20,21 @@
 #define AUTONOMY_MAX_SPEED      1000
 #define AUTONOMY_MAX_RAMP_RATE  0 // Disable ramping for Autonomy
 
-#define LEFT_DRIVE_MIN          0
+
 #define LEFT_PAN_MIN            0
 #define LEFT_TILT_MIN           0
-#define RIGHT_DRIVE_MIN         0
 #define RIGHT_PAN_MIN           0
 #define RIGHT_TILT_MIN          0
-#define BACK_DRIVE_MIN          0
+#define BACK_PAN_MIN            0
+#define BACK_TILT_MIN           0
 
-#define LEFT_DRIVE_MAX          180
+
 #define LEFT_PAN_MAX            180
 #define LEFT_TILT_MAX           180
-#define RIGHT_DRIVE_MAX         180
 #define RIGHT_PAN_MAX           180
 #define RIGHT_TILT_MAX          180
-#define BACK_DRIVE_MAX          180
+#define BACK_PAN_MAX            180
+#define BACK_TILT_MAX           180
 
 #define TELEMETRY_PERIOD        750 // ms
 uint32_t lastTelemetry = 0;
@@ -60,7 +60,7 @@ uint32_t customDisplayColor = 0x000000; // Adafruit_NeoPixel::Color(r, g, b) -> 
 void setDisplayState(DisplayState newState);
 uint32_t displayStateProgress = 0;
 
-Adafruit_NeoPixel neoPixel(LED_COUNT, NEOPIXEL);
+Adafruit_NeoPixel neoPixel(LED_COUNT, NEOPIXEL); //Changed name of Pin assignment
 void updateLightingPanel();
 uint32_t lastLightingPanelUpdate = 0;
 bool lightingPanelChanged = true;
@@ -88,18 +88,18 @@ float motorSpeeds[6] = {0};
 float motorCurrents[6] = {0};
 float vescCurrents[6] = {0};
 
-//Servo Declarations - Three 9-pin Connectors each with Three Servos
-CachedServo leftDriveServo(90, LEFT_DRIVE_MIN, LEFT_DRIVE_MAX);
+//Servo Declarations - Four 4-pin connectors with 2 servo pins each
 CachedServo leftPanServo(90, LEFT_PAN_MIN, LEFT_PAN_MAX);
 CachedServo leftTiltServo(90, LEFT_TILT_MIN, LEFT_TILT_MAX);
 
-CachedServo rightDriveServo(90, RIGHT_DRIVE_MIN, RIGHT_DRIVE_MAX);
+
 CachedServo rightPanServo(90, RIGHT_PAN_MIN, RIGHT_PAN_MAX);
 CachedServo rightTiltServo(90, RIGHT_TILT_MIN, RIGHT_TILT_MAX);
 
-CachedServo backDriveServo(90, BACK_DRIVE_MIN, BACK_DRIVE_MAX);
+CachedServo backPanServo(90, BACK_PAN_MIN, BACK_TILT_MIN);
+CachedServo backTiltServo(90, BACK_TILT_MIN, BACK_PAN_MIN);
 
-CachedServo servo1(90, 10, 160), servo2(90, 10, 160);
+CachedServo spare1(90, 10, 160), spare2(90, 10, 160);
 
 // Accelerometer
 Accelerometer accelerometer(ACC_SDA, ACC_SCL);
